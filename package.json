@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "format": "prettier --ignore-unknown --write .gitignore README.md package.json package-lock.json build.mjs \"src/**/*.{js,txt}\" \"tests/**/*.{mjs,html}\"",
-    "format:check": "prettier --ignore-unknown --check .gitignore README.md package.json package-lock.json build.mjs \"src/**/*.{js,txt}\" \"tests/**/*.{mjs,html}\"",
+    "format": "prettier --ignore-unknown --write .gitignore README.md package.json package-lock.json build.mjs \"scripts/**/*.mjs\" \"src/**/*.{js,txt}\" \"tests/**/*.{mjs,html}\"",
+    "format:check": "prettier --ignore-unknown --check .gitignore README.md package.json package-lock.json build.mjs \"scripts/**/*.mjs\" \"src/**/*.{js,txt}\" \"tests/**/*.{mjs,html}\"",
     "validate": "node tests/validate.mjs",
     "test:runtime": "node tests/runtime.mjs",
     "test": "npm run build && npm run validate && npm run test:runtime",
-    "test:youtube": "node tests/youtube-live.mjs"
+    "test:youtube": "node tests/youtube-live.mjs",
+    "release:patch": "node scripts/release.mjs patch",
+    "release:minor": "node scripts/release.mjs minor",
+    "release:major": "node scripts/release.mjs major"
   },
   "devDependencies": {
     "prettier": "^3.1.0",

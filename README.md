@@ -32,9 +32,17 @@ is the file to install locally or upload to GreasyFork.
 
 Use `npm run format` before committing broad source or documentation edits.
 
-## Release checklist
+## Release
 
-- Bump the version in `package.json`.
-- Run `npm test`.
-- Smoke-test the generated artifact in current Tampermonkey and Violentmonkey.
-- Upload `HML5SpeedController.user.js` to GreasyFork.
+After making source or asset changes, run:
+
+```sh
+npm run release:patch -- "Describe the change"
+```
+
+The release script bumps the version, rebuilds `HML5SpeedController.user.js`,
+validates it, commits all current changes, and pushes the current branch. Use
+`release:minor` or `release:major` when the version change should be larger.
+
+Smoke-test the generated artifact in current Tampermonkey and Violentmonkey
+before or after publishing, depending on the risk of the change.
