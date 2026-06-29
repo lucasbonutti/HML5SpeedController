@@ -6,6 +6,7 @@
 // @author       lbs197
 // @homepageURL  https://github.com/lucasbonutti/HML5SpeedController
 // @supportURL   https://github.com/lucasbonutti/HML5SpeedController/issues
+// @icon         https://raw.githubusercontent.com/lucasbonutti/HML5SpeedController/main/logo.png
 // @match        http://*/*
 // @match        https://*/*
 // @match        file:///*
