@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HML5SpeedController userscript fixture</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #eef2f7;
+        color: #172033;
+        font:
+          15px/1.5 system-ui,
+          sans-serif;
+      }
+      main {
+        width: min(900px, calc(100% - 32px));
+        margin: 48px auto;
+      }
+      h1 {
+        margin-bottom: 6px;
+      }
+      .player {
+        position: relative;
+        width: min(720px, 100%);
+        height: 405px;
+        margin-top: 24px;
+        border-radius: 14px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #172033, #35415b);
+        box-shadow: 0 18px 50px rgb(25 40 65 / 0.24);
+      }
+      video {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .placeholder {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: #d9e2f2;
+        font-size: 18px;
+        pointer-events: none;
+      }
+      #open-settings {
+        margin-top: 18px;
+        border: 0;
+        border-radius: 8px;
+        padding: 10px 14px;
+        background: #1769e0;
+        color: white;
+        font: inherit;
+        cursor: pointer;
+      }
+    </style>
+    <script>
+      const gmStore = new Map();
+      const gmListeners = new Map();
+      window.GM_getValue = (key, fallback) =>
+        gmStore.has(key) ? structuredClone(gmStore.get(key)) : fallback;
+      window.GM_setValue = (key, value) => {
+        const old = gmStore.get(key);
+        gmStore.set(key, structuredClone(value));
+        for (const cb of gmListeners.get(key) || []) cb(key, old, value, false);
+      };
+      window.GM_deleteValue = (key) => gmStore.delete(key);
+      window.GM_listValues = () => [...gmStore.keys()];
+      window.GM_addValueChangeListener = (key, callback) => {
+        if (!gmListeners.has(key)) gmListeners.set(key, []);
+        gmListeners.get(key).push(callback);
+      };
+      window.__gmMenuCommands = [];
+      window.GM_registerMenuCommand = (name, callback) => {
+        window.__gmMenuCommands.push({ name, callback });
+      };
+      window.GM_addStyle = (css) => {
+        const style = document.createElement("style");
+        style.textContent = css;
+        document.documentElement.appendChild(style);
+        return style;
+      };
+      Object.defineProperty(HTMLMediaElement.prototype, "readyState", {
+        configurable: true,
+        get: () => 4,
+      });
+      Object.defineProperty(HTMLMediaElement.prototype, "duration", {
+        configurable: true,
+        get: () => 300,
+      });
+    </script>
+  </head>
+  <body>
+    <main>
+      <h1>HML5SpeedController</h1>
+      <p>
+        Userscript rendering fixture. Hover the 1.00 indicator to reveal
+        controls.
+      </p>
+      <div class="player">
+        <div class="placeholder">HTML5 video test surface</div>
+        <video id="fixture-video" controls></video>
+      </div>
+      <button id="open-settings" type="button">Invoke manager UI toggle</button>
+    </main>
+    <script src="../HML5SpeedController.user.js"></script>
+    <script>
+      document
+        .getElementById("open-settings")
+        .addEventListener("click", () =>
+          window.__gmMenuCommands[0]?.callback(),
+        );
+    </script>
+  </body>
+</html>

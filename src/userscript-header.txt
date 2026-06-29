@@ -1,0 +1,21 @@
+// ==UserScript==
+// @name         HML5SpeedController
+// @namespace    https://hml5-speed-controller.local
+// @version      __VERSION__
+// @description  Speed up, slow down, advance and rewind HTML5 audio/video with shortcuts and an on-video controller.
+// @author       Lucas
+// @match        http://*/*
+// @match        https://*/*
+// @match        file:///*
+// @exclude      https://hangouts.google.com/*
+// @exclude      https://meet.google.com/*
+// @grant        unsafeWindow
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_deleteValue
+// @grant        GM_listValues
+// @grant        GM_addValueChangeListener
+// @grant        GM_registerMenuCommand
+// @grant        GM_addStyle
+// @run-at       document-start
+// ==/UserScript==
