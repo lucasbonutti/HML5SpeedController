@@ -3,7 +3,9 @@
 // @namespace    https://hml5-speed-controller.local
 // @version      __VERSION__
 // @description  Speed up, slow down, advance and rewind HTML5 audio/video with shortcuts and an on-video controller.
-// @author       Lucas
+// @author       lbs197
+// @homepageURL  https://github.com/lucasbonutti/HML5SpeedController
+// @supportURL   https://github.com/lucasbonutti/HML5SpeedController/issues
 // @match        http://*/*
 // @match        https://*/*
 // @match        file:///*

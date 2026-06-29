@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         HML5SpeedController
 // @namespace    https://hml5-speed-controller.local
-// @version      1.0.0
+// @version      1.0.1
 // @description  Speed up, slow down, advance and rewind HTML5 audio/video with shortcuts and an on-video controller.
-// @author       Lucas
+// @author       lbs197
+// @homepageURL  https://github.com/lucasbonutti/HML5SpeedController
+// @supportURL   https://github.com/lucasbonutti/HML5SpeedController/issues
 // @match        http://*/*
 // @match        https://*/*
 // @match        file:///*
@@ -22,7 +24,7 @@
 (function hml5SpeedControllerUserscript() {
 
   "use strict";
-  const VSC_USER_SCRIPT_VERSION = '1.0.0';
+  const VSC_USER_SCRIPT_VERSION = '1.0.1';
   const VSC_BASE_CSS =
     '/*\n * inject.css — Loaded via userscript startup CSS (before any JS runs).\n *\n * Base vsc-controller rules live here for timing safety: userscript CSS is\n * available before the first controller element is created. Site-specific\n * overrides are in the user-editable "Controller CSS" setting\n * (src/styles/controller-css-defaults.js), injected as a <style> by inject.js.\n */\nvsc-controller {\n  /* Out of normal flow by default; site overrides change to relative */\n  position: absolute;\n  visibility: visible;\n  opacity: 1;\n  display: block;\n  width: auto !important;\n  height: auto !important;\n  white-space: normal;\n  user-select: none;\n}\n\n/* shift YT 3D controller down */\n/* e.g. https://www.youtube.com/watch?v=erftYPflJzQ */\n.ytp-webgl-spherical-control {\n  top: 60px !important;\n}\n\n.ytp-fullscreen .ytp-webgl-spherical-control {\n  top: 100px !important;\n}\n\n/* disable Vimeo video overlay */\ndiv.video-wrapper + div.target {\n  height: 0;\n}\n\n/* Fix black overlay on Kickstarter */\ndiv.video-player.has_played.vertically_center:before,\ndiv.legacy-video-player.has_played.vertically_center:before {\n  content: none !important;\n}\n';
 
