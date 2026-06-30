@@ -46,16 +46,20 @@ function installGmMocks(initial = {}) {
   };
 }
 
-async function preparePage(browser, initialStore = {}) {
+async function preparePage(
+  browser,
+  initialStore = {},
+  body = '<main id="player"><video id="video" controls style="width:640px;height:360px"></video></main>',
+) {
   const page = await browser.newPage();
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.stack || error.message));
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
   });
-  await page.setContent(`<!doctype html><html><head></head><body>
-    <main id="player"><video id="video" controls style="width:640px;height:360px"></video></main>
-  </body></html>`);
+  await page.setContent(
+    `<!doctype html><html><head></head><body>${body}</body></html>`,
+  );
   await page.evaluate(installGmMocks, initialStore);
   await page.evaluate(() => {
     Object.defineProperty(HTMLMediaElement.prototype, "readyState", {
@@ -83,6 +87,84 @@ const browser = await puppeteer.launch({
   args: ["--no-sandbox"],
 });
 try {
+  const dormant = await preparePage(
+    browser,
+    {},
+    '<main id="content"><h1>No media here</h1></main>',
+  );
+  await dormant.page.waitForFunction(
+    () =>
+      window.HML5_controller?.config?._loaded &&
+      window.VSC.mediaDetectionInitialized,
+    { timeout: 5000 },
+  );
+  await new Promise((resolve) => setTimeout(resolve, 1300));
+  let dormantState = await dormant.page.evaluate(() => ({
+    active: window.HML5_controller.initialized,
+    hasActionHandler: Boolean(window.HML5_controller.actionHandler),
+    hasEventManager: Boolean(window.HML5_controller.eventManager),
+    controllers: document.querySelectorAll("vsc-controller").length,
+    menuCount: window.__gmMenuCommands.length,
+  }));
+  assert.equal(
+    dormantState.active,
+    false,
+    "Page without media should not activate the controller runtime",
+  );
+  assert.equal(
+    dormantState.hasActionHandler,
+    false,
+    "Page without media should not create action handlers",
+  );
+  assert.equal(
+    dormantState.hasEventManager,
+    false,
+    "Page without media should not install keyboard listeners",
+  );
+  assert.equal(
+    dormantState.controllers,
+    0,
+    "Page without media should not receive controllers",
+  );
+  assert.equal(
+    dormantState.menuCount,
+    1,
+    "Settings menu should remain available while media detection is dormant",
+  );
+  await dormant.page.evaluate(() => {
+    const video = document.createElement("video");
+    video.id = "late-video";
+    video.controls = true;
+    video.style.cssText = "width:320px;height:180px";
+    document.body.appendChild(video);
+  });
+  await dormant.page.waitForFunction(
+    () =>
+      window.HML5_controller.initialized &&
+      document.querySelector("#late-video")?.vsc?.div,
+    { timeout: 8000 },
+  );
+  dormantState = await dormant.page.evaluate(() => ({
+    active: window.HML5_controller.initialized,
+    controllers: document.querySelectorAll("vsc-controller").length,
+  }));
+  assert.equal(
+    dormantState.active,
+    true,
+    "Dynamically inserted media should activate the runtime",
+  );
+  assert.equal(
+    dormantState.controllers,
+    1,
+    "Dynamically inserted media should receive a controller",
+  );
+  assert.deepEqual(
+    dormant.errors,
+    [],
+    `Unexpected dormant-page errors:\n${dormant.errors.join("\n")}`,
+  );
+  await dormant.page.close();
+
   const { page, errors } = await preparePage(browser);
   await page.waitForFunction(
     () =>

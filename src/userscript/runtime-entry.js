@@ -10,6 +10,8 @@ class HML5SpeedControllerApp {
     this.mutationObserver = null;
     this.mediaObserver = null;
     this.initialized = false;
+    this._cssLiveUpdatesReady = false;
+    this._onCSSStorageChanged = null;
   }
 
   /**
@@ -54,15 +56,13 @@ class HML5SpeedControllerApp {
    */
   initializeDocument(document) {
     try {
-      if (window.VSC.initialized) {
+      if (window.VSC.mediaDetectionInitialized) {
         return;
       }
 
-      window.VSC.initialized = true;
-      this.eventManager.setupEventListeners(document);
-
+      window.VSC.mediaDetectionInitialized = true;
       this.deferExpensiveOperations(document);
-      this.logger.debug("Document initialization completed");
+      this.logger.debug("Document media detection initialized");
     } catch (error) {
       this.logger.error(`Failed to initialize document: ${error.message}`);
     }
@@ -164,25 +164,14 @@ class HML5SpeedControllerApp {
    */
   deferDOMWork(document) {
     const doWork = () => {
-      this.injectControllerCSS();
-      this.setupCSSLiveUpdates();
       this.siteHandlerManager.initialize(document);
-
-      this.eventManager = new this.EventManager(this.config, null);
-      this.actionHandler = new this.ActionHandler(
-        this.config,
-        this.eventManager,
-      );
-      this.eventManager.actionHandler = this.actionHandler;
-
       this.setupObservers();
 
       this.initializeWhenReady(document, (doc) => {
         this.initializeDocument(doc);
       });
 
-      this.logger.info("HML5SpeedController initialized successfully");
-      this.initialized = true;
+      this.logger.info("HML5SpeedController waiting for media elements");
     };
 
     if (window.requestIdleCallback) {
@@ -247,7 +236,12 @@ class HML5SpeedControllerApp {
 
   /** Live-update the user's custom CSS when options are saved. */
   setupCSSLiveUpdates() {
-    document.documentElement.addEventListener("VSC_STORAGE_CHANGED", (e) => {
+    if (this._cssLiveUpdatesReady) {
+      return;
+    }
+
+    this._cssLiveUpdatesReady = true;
+    this._onCSSStorageChanged = (e) => {
       if (
         e.detail?.customCSS?.newValue === undefined ||
         !this._controllerSheet
@@ -270,7 +264,12 @@ class HML5SpeedControllerApp {
         );
         this._customSheet = null;
       }
-    });
+    };
+
+    document.documentElement.addEventListener(
+      "VSC_STORAGE_CHANGED",
+      this._onCSSStorageChanged,
+    );
   }
 
   /**
@@ -290,6 +289,29 @@ class HML5SpeedControllerApp {
       (video) => this.onVideoRemoved(video),
       this.mediaObserver,
     );
+  }
+
+  /**
+   * Activate the controller runtime after a real media element is present.
+   * The userscript still loads on broad @match URLs so it can detect dynamic
+   * players, but global listeners and CSS stay dormant until this point.
+   * @param {Document} document - Document receiving controller behavior
+   */
+  ensureActive(document) {
+    if (this.initialized) {
+      return;
+    }
+
+    this.injectControllerCSS();
+    this.setupCSSLiveUpdates();
+
+    this.eventManager = new this.EventManager(this.config, null);
+    this.actionHandler = new this.ActionHandler(this.config, this.eventManager);
+    this.eventManager.actionHandler = this.actionHandler;
+    this.eventManager.setupEventListeners(document);
+
+    this.logger.info("HML5SpeedController activated for media page");
+    this.initialized = true;
   }
 
   /**
@@ -313,6 +335,8 @@ class HML5SpeedControllerApp {
         this.logger.debug("Video already has controller attached");
         return;
       }
+
+      this.ensureActive(video.ownerDocument || document);
 
       // Defer until readyState >= HAVE_CURRENT_DATA — inserting a controller
       // too early can trigger the site's internal MutationObservers.
@@ -359,7 +383,7 @@ class HML5SpeedControllerApp {
    * Counterpart to initialize() — leaves the page as if VSC was never active.
    */
   teardown() {
-    if (!this.initialized) {
+    if (!this.initialized && !this.mutationObserver && !this.eventManager) {
       return;
     }
 
@@ -398,13 +422,21 @@ class HML5SpeedControllerApp {
         (s) => s !== this._controllerSheet && s !== this._customSheet,
       );
     }
+    if (this._onCSSStorageChanged) {
+      document.documentElement.removeEventListener(
+        "VSC_STORAGE_CHANGED",
+        this._onCSSStorageChanged,
+      );
+    }
     this._controllerSheet = null;
     this._customSheet = null;
+    this._cssLiveUpdatesReady = false;
+    this._onCSSStorageChanged = null;
 
     this.actionHandler = null;
     this.mediaObserver = null;
     this.initialized = false;
-    window.VSC.initialized = false;
+    window.VSC.mediaDetectionInitialized = false;
   }
 
   /**
@@ -523,7 +555,7 @@ class HML5SpeedControllerApp {
     });
 
     // Prevent double injection
-    if (window.HML5_controller && window.HML5_controller.initialized) {
+    if (window.HML5_controller) {
       window.VSC.logger?.info("VSC already initialized, skipping re-injection");
       return;
     }
